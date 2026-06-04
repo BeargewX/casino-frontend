@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-zinc-950 text-zinc-100 font-body;
+  }
+}
+
+@layer utilities {
+  .felt-bg {
+    background: radial-gradient(ellipse at center, #0d5e2e 0%, #062d16 100%);
+  }
+  .gold-text {
+    @apply text-gold-400;
+  }
+  .card-felt {
+    @apply bg-zinc-900 border border-zinc-800 rounded-2xl;
+  }
+  .btn-gold {
+    @apply bg-gold-500 hover:bg-gold-400 text-zinc-950 font-semibold rounded-xl px-6 py-3 transition-all duration-150 active:scale-95;
+  }
+  .btn-ghost {
+    @apply border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white rounded-xl px-6 py-3 transition-all duration-150;
+  }
+  .chip {
+    @apply inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm shadow-lg;
+  }
+}
