@@ -57,7 +57,8 @@ export default function PokerPage() {
     if (!token) return
     console.log('[Poker] connecting with token:', token.substring(0, 20) + '...')
 
-    const s = io('http://localhost:3001/poker', {
+    const BACKEND = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+    const s = io(BACKEND + '/poker', {
       auth: { token },
       transports: ['websocket', 'polling'],
       forceNew: true,
