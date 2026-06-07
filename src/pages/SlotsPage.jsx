@@ -286,10 +286,17 @@ export default function SlotsPage() {
   const [history, setHistory] = useState([])
   const [tab, setTab]         = useState('game')
 
+  const spinningRef = useRef(false)
+  const amountRef   = useRef(amount)
+  const balanceRef  = useRef(balance)
+  useEffect(() => { amountRef.current = amount }, [amount])
+  useEffect(() => { balanceRef.current = balance }, [balance])
+
   const doSpin = useCallback(async (isFS = false) => {
-    if (spinning) return
-    if (!isFS && amount < 10) return toast.error('เดิมพันขั้นต่ำ 10 เหรียญ')
-    if (!isFS && amount > balance) return toast.error('ยอดเงินไม่พอ')
+    if (spinningRef.current) return
+    if (!isFS && amountRef.current < 10) return toast.error('เดิมพันขั้นต่ำ 10 เหรียญ')
+    if (!isFS && amountRef.current > balanceRef.current) return toast.error('ยอดเงินไม่พอ')
+    spinningRef.current = true
 
     setSpinning(true); setWins([]); setWinCells([])
     setTotalWin(null); setParticles(false); setBigWin(false)
@@ -298,7 +305,8 @@ export default function SlotsPage() {
 
     try {
       const ep  = isFS ? '/slots/freespin' : '/slots/spin'
-      const pay = isFS ? { amount, freeMult: fsMultRef.current } : { amount }
+      const amt = amountRef.current
+      const pay = isFS ? { amount: amt, freeMult: fsMultRef.current } : { amount: amt }
       const { data } = await api.post(ep, pay)
 
       await new Promise(r => setTimeout(r, 700))
@@ -322,15 +330,15 @@ export default function SlotsPage() {
       }
 
       const isJP  = data.wins?.some(w => w.sym==='dragon' && w.count===5)
-      const isBig = data.totalWin >= amount * 15
-      setStats(s => ({ spins:s.spins+1, won:s.won+(data.totalWin||0), lost:s.lost+(!isFS&&!data.totalWin?amount:0) }))
+      const isBig = data.totalWin >= amt * 15
+      setStats(s => ({ spins:s.spins+1, won:s.won+(data.totalWin||0), lost:s.lost+(!isFS&&!data.totalWin?amt:0) }))
 
       if (isJP)       { setJackpot(true);setBigWin(true);setParticles(true); SFX.jackpot(); toast.success(`🐉 DRAGON JACKPOT! +${data.totalWin.toLocaleString()}`,{duration:6000}) }
       else if (isBig) { setBigWin(true);setParticles(true); SFX.bigwin(); toast.success(`💰 BIG WIN +${data.totalWin.toLocaleString()}`,{duration:4000}) }
       else if (data.totalWin > 0) { setParticles(true); SFX.win() }
       else if (!isFS) SFX.lose()
 
-      setHistory(p => [{ wins:data.wins, total:data.totalWin, amount, isFS }, ...p.slice(0,9)])
+      setHistory(p => [{ wins:data.wins, total:data.totalWin, amount:amt, isFS }, ...p.slice(0,9)])
       setTimeout(() => setParticles(false), 3500)
 
       // Trigger free spins
@@ -342,6 +350,9 @@ export default function SlotsPage() {
         fsMultRef.current = 2; eggsRef.current = 1
         setFsCount(data.freeSpinsAwarded); setFsMult(2)
         setTotalEggMult(1); setFsMode(true)
+        spinningRef.current = false
+        await new Promise(r => setTimeout(r, 1500))
+        doSpin(true)
       }
 
       // Retrigger
@@ -361,16 +372,21 @@ export default function SlotsPage() {
           setFsMode(false); setFsMult(2)
           if (eggsRef.current > 1) toast.success(`🥚 Egg Bonus รวม ×${eggsRef.current}!`, {duration:4000})
           eggsRef.current = 1; setTotalEggMult(1)
+          spinningRef.current = false
         } else {
-          await new Promise(r => setTimeout(r, 1000))
+          spinningRef.current = false
+          await new Promise(r => setTimeout(r, 900))
           doSpin(true)
         }
+      } else {
+        spinningRef.current = false
       }
     } catch(e) {
       toast.error(e.response?.data?.error || 'เกิดข้อผิดพลาด')
+      spinningRef.current = false
       setSpinning(false)
     }
-  }, [spinning, amount, balance])
+  }, [])
 
   const displayGrid = grid || Array.from({length:5}, () => Array(5).fill({sym:'skull'}))
   const PAY_TABLE = [
