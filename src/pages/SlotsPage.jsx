@@ -286,6 +286,13 @@ export default function SlotsPage() {
   const [history, setHistory] = useState([])
   const [tab, setTab]         = useState('game')
 
+  // Auto spin
+  const [autoCount, setAutoCount]   = useState(0)   // remaiming auto spins
+  const [autoTotal, setAutoTotal]   = useState(10)  // selected total
+  const [autoRunning, setAutoRunning] = useState(false)
+  const [autoStopWin, setAutoStopWin] = useState(0) // stop if win >= this (0=disabled)
+  const autoRunRef = useRef(false)
+
   const spinningRef = useRef(false)
   const amountRef   = useRef(amount)
   const balanceRef  = useRef(balance)
@@ -549,16 +556,42 @@ export default function SlotsPage() {
                     ))}
                   </div>
                 </div>
-                <button onClick={()=>doSpin(fsMode)} disabled={spinning||fsMode}
-                  className="font-display text-2xl font-bold rounded-2xl active:scale-95 disabled:opacity-40"
-                  style={{
-                    background:spinning||fsMode?'#1a0800':'linear-gradient(180deg,#ff6644,#cc2200)',
-                    color:'#fff', padding:'14px 26px',
-                    boxShadow:spinning||fsMode?'none':'0 0 25px #ff444466,0 4px 0 #881100',
-                    border:'2px solid #ff4444', minWidth:100,
-                  }}>
-                  {fsMode?'🔥 AUTO':spinning?'⏳':'SPIN'}
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button onClick={()=>doSpin(fsMode)} disabled={spinning||fsMode||autoRunning}
+                    className="font-display text-2xl font-bold rounded-2xl active:scale-95 disabled:opacity-40"
+                    style={{
+                      background:spinning||fsMode||autoRunning?'#1a0800':'linear-gradient(180deg,#ff6644,#cc2200)',
+                      color:'#fff', padding:'14px 26px',
+                      boxShadow:spinning||fsMode||autoRunning?'none':'0 0 25px #ff444466,0 4px 0 #881100',
+                      border:'2px solid #ff4444', minWidth:100,
+                    }}>
+                    {fsMode?'🔥 AUTO':spinning?'⏳':'SPIN'}
+                  </button>
+
+                  {/* Auto Spin Button */}
+                  {!fsMode && (
+                    autoRunning ? (
+                      <button onClick={stopAuto}
+                        className="rounded-xl font-bold text-sm active:scale-95 animate-pulse"
+                        style={{background:'#aa2200',color:'#fff',padding:'8px 16px',border:'1px solid #ff4444'}}>
+                        ⏹ STOP ({autoCount})
+                      </button>
+                    ) : (
+                      <div className="flex gap-1">
+                        <select value={autoTotal} onChange={e=>setAutoTotal(Number(e.target.value))}
+                          className="flex-1 rounded-lg text-xs text-center focus:outline-none"
+                          style={{background:'#1a0800',color:'#aaa',border:'1px solid #ff440033',padding:'6px 2px'}}>
+                          {[10,25,50,100].map(v=><option key={v} value={v}>{v}x</option>)}
+                        </select>
+                        <button onClick={startAuto} disabled={spinning}
+                          className="flex-1 rounded-lg font-bold text-xs disabled:opacity-40 active:scale-95"
+                          style={{background:'#1a3300',color:'#88ff44',padding:'6px 8px',border:'1px solid #44ff4433'}}>
+                          ▶ AUTO
+                        </button>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
               <div className="mt-2 text-center text-sm font-semibold" style={{color:'#ffdd00'}}>
                 💰 {balance?.toLocaleString()} เหรียญ
